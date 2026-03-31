@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Activity, BarChart3 } from "lucide-react";
+import { Activity, BarChart3, Grid3X3 } from "lucide-react";
 import Watchlist from "@/components/Watchlist";
 import QuoteCard from "@/components/QuoteCard";
 import StockChart from "@/components/StockChart";
 import Predictor from "@/components/Predictor";
+import RealtimeDashboard from "@/components/RealtimeDashboard";
 
-type Tab = "tracker" | "predictor";
+type Tab = "tracker" | "predictor" | "dashboard";
 
 const Index = () => {
   const [symbol, setSymbol] = useState("AAPL");
@@ -41,6 +42,17 @@ const Index = () => {
               Live Tracker
             </button>
             <button
+              onClick={() => setTab("dashboard")}
+              className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+                tab === "dashboard"
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Grid3X3 className="h-3.5 w-3.5" />
+              Real-Time Dashboard
+            </button>
+            <button
               onClick={() => setTab("predictor")}
               className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
                 tab === "predictor"
@@ -55,12 +67,14 @@ const Index = () => {
         </div>
 
         {/* Content */}
-        <div className="p-6 max-w-5xl">
+        <div className={`p-6 ${tab === "dashboard" ? "" : "max-w-5xl"}`}>
           {tab === "tracker" ? (
             <div className="space-y-4">
               <QuoteCard symbol={symbol} />
               <StockChart symbol={symbol} />
             </div>
+          ) : tab === "dashboard" ? (
+            <RealtimeDashboard />
           ) : (
             <Predictor symbol={symbol} />
           )}

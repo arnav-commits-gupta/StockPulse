@@ -1,5 +1,5 @@
 // Configure this to point to your Flask backend
-const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:5000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5002";
 
 export interface WatchlistItem {
   symbol: string;
@@ -215,7 +215,7 @@ export const MODEL_OPTIONS = [
 ];
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, options);
+  const res = await fetch(`${BASE_URL}${path}`, options);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Request failed" }));
     throw new Error(err.error || `HTTP ${res.status}`);

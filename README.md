@@ -7,6 +7,7 @@ React 18 with TypeScript
 Vite (Build Tool)
 Shadcn UI Components
 Tailwind CSS
+Socket.IO Client (Real-time WebSocket)
 React Query (Data Fetching)
 TanStack React Query
 Chart.js & Recharts (Charting)
@@ -16,6 +17,7 @@ Lucide Icons
 Backend
 Python 3.9+
 Flask
+Flask-SocketIO (WebSocket real-time updates)
 Pandas & NumPy (Data Processing)
 Scikit-learn (ML Models)
 yfinance (Stock Data API)
@@ -23,6 +25,16 @@ Flask-CORS
 ReportLab (PDF Export)
 
 🌟 Features in Detail
+
+🚀 Real-Time Dashboard
+Monitor multiple stocks simultaneously with live WebSocket updates
+Add/remove stocks dynamically from your personal dashboard
+Connection status indicator (LIVE/DISCONNECTED)
+Updates every 3 seconds for all subscribed symbols
+Real-time price changes with colored indicators (green/red)
+Display Open, High, Low, Volume, and P/E Ratio
+One-click stock removal
+
 📊 Live Stock Quotes
 Real-time stock price tracking for 81+ instruments
 Comprehensive quote data (price, change, volume, PE ratio, etc.)
