@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { fetchPrediction, TIMEFRAMES, MODEL_OPTIONS, type PredictionResult } from "@/lib/api";
-import { Loader2, Brain, BarChart3, Target } from "lucide-react";
+import { fetchPrediction, TIMEFRAMES, type PredictionResult } from "@/lib/api";
+import { Loader2, Brain, BarChart3, Target, Search } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
@@ -11,12 +11,78 @@ interface PredictorProps {
   symbol: string;
 }
 
+// Model selection logic based on stock and timeframe
+const selectBestModel = (symbol: string, timeframe: string): string => {
+  // Volatile stocks that need advanced models
+  const volatileStocks = [
+    "TSLA", "NVDA", "AMD", "COIN", "MSTR", 
+    "BTC-USD", "ETH-USD", "XRP-USD", "SOL-USD", // Cryptocurrencies
+    "MRNA", "AVCT", "POWW" // Volatile mid-caps
+  ];
+  
+  // Growth tech stocks
+  const techGrowthStocks = [
+    "NVDA", "META", "AMZN", "GOOGL", "NFLX", "MSFT"
+  ];
+  
+  // Stable, predictable stocks (use simpler model)
+  const stableStocks = [
+    "KO", "O", "JNJ", "PG", "UNH", "CVX", "XOM", // Dividend stocks
+    "VZ", "T", "PEP", "MCD", "WMT", "COST" // Stable mature companies
+  ];
+
+  // Crypto needs best model always
+  if (symbol.includes("USD") || symbol.includes("BTC") || symbol.includes("ETH")) {
+    return "gb"; // Gradient Boosting for crypto
+  }
+
+  // Very short timeframes use faster model
+  if (["1m", "5m"].includes(timeframe)) {
+    return "lr"; // Linear Regression for ultra-short term
+  }
+
+  // Medium timeframes (15m, 1h, 4h)
+  if (["15m", "1h", "4h"].includes(timeframe)) {
+    // Use Random Forest for medium term - good balance
+    return volatileStocks.includes(symbol) ? "gb" : "rf";
+  }
+
+  // Long-term predictions (1d, 1wk)
+  if (["1d", "1wk"].includes(timeframe)) {
+    if (volatileStocks.includes(symbol)) {
+      return "gb"; // Gradient Boosting for volatile stocks
+    }
+    if (techGrowthStocks.includes(symbol)) {
+      return "gb"; // Gradient Boosting for growth stocks
+    }
+    if (stableStocks.includes(symbol)) {
+      return "lr"; // Linear Regression for stable stocks
+    }
+    return "rf"; // Random Forest as default
+  }
+
+  return "rf"; // Default to Random Forest
+};
+
+// Get optimization level based on model
+const getOptimizationLevel = (modelKey: string): { level: string; desc: string } => {
+  const levels: Record<string, { level: string; desc: string }> = {
+    "lr": { level: "Standard", desc: "Optimized for fast predictions" },
+    "rf": { level: "Advanced", desc: "Optimized for balanced accuracy" },
+    "gb": { level: "Premium", desc: "Optimized for maximum accuracy" },
+  };
+  return levels[modelKey] || levels["rf"];
+};
+
 export default function Predictor({ symbol }: PredictorProps) {
   const [timeframe, setTimeframe] = useState("1d");
-  const [model, setModel] = useState("lr");
+  
+  // Auto-select best model based on symbol and timeframe
+  const selectedModel = useMemo(() => selectBestModel(symbol, timeframe), [symbol, timeframe]);
+  const optimizationInfo = getOptimizationLevel(selectedModel);
 
   const mutation = useMutation({
-    mutationFn: () => fetchPrediction(symbol, timeframe, model),
+    mutationFn: () => fetchPrediction(symbol, timeframe, selectedModel),
   });
 
   const result = mutation.data;
@@ -53,7 +119,7 @@ export default function Predictor({ symbol }: PredictorProps) {
         </h3>
 
         {/* Timeframe */}
-        <div className="mb-4">
+        <div className="mb-6">
           <label className="text-[11px] text-muted-foreground uppercase tracking-wide block mb-2">Timeframe</label>
           <div className="flex flex-wrap gap-1.5">
             {TIMEFRAMES.map((tf) => (
@@ -72,25 +138,20 @@ export default function Predictor({ symbol }: PredictorProps) {
           </div>
         </div>
 
-        {/* Model */}
-        <div className="mb-4">
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wide block mb-2">Model</label>
-          <div className="flex gap-2">
-            {MODEL_OPTIONS.map((m) => (
-              <button
-                key={m.key}
-                onClick={() => setModel(m.key)}
-                className={`flex-1 px-3 py-2 text-xs rounded border transition-colors ${
-                  model === m.key
-                    ? "border-accent bg-accent/10 text-accent"
-                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
-                }`}
-              >
-                <div className="font-medium">{m.label}</div>
-                <div className="text-[10px] mt-0.5 opacity-70">{m.desc}</div>
-              </button>
-            ))}
+        {/* Auto-Selected Model Info */}
+        <div className="mb-6 p-4 bg-gradient-to-right from-accent/10 to-accent/5 border border-accent/20 rounded-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium flex items-center gap-1.5">
+              <Search className="h-3.5 w-3.5 text-accent" />
+              Optimized Analysis
+            </span>
+            <span className="text-xs font-medium text-accent bg-accent/20 px-2 py-1 rounded">
+              {optimizationInfo.level}
+            </span>
           </div>
+          <p className="text-xs text-muted-foreground">
+            {optimizationInfo.desc} • {symbol} on {TIMEFRAMES.find(tf => tf.key === timeframe)?.label?.toLowerCase()}
+          </p>
         </div>
 
         {/* Run button */}
