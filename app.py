@@ -1969,6 +1969,32 @@ def delete_alert(alert_id):
     global _alerts; _alerts=[a for a in _alerts if a["id"]!=alert_id]
     return jsonify({"success":True})
 
+def check_alerts(quote: dict) -> list:
+    """Check if any alerts are triggered based on current quote."""
+    triggered = []
+    symbol = quote.get("symbol", "")
+    price = quote.get("price", 0)
+    
+    for alert in _alerts:
+        if alert["symbol"] != symbol or alert["triggered"]:
+            continue
+        
+        alert_type = alert.get("type", "")
+        threshold = alert.get("threshold", 0)
+        
+        if alert_type == "price_above" and price > threshold:
+            alert["triggered"] = True
+            triggered.append(alert)
+        elif alert_type == "price_below" and price < threshold:
+            alert["triggered"] = True
+            triggered.append(alert)
+        elif alert_type == "price_equal" and abs(price - threshold) < 0.01:
+            alert["triggered"] = True
+            triggered.append(alert)
+    
+    return triggered
+
+
 @app.route("/api/alerts/check",methods=["POST"])
 def check_alerts_ep():
     body=request.get_json() or {}
