@@ -51,6 +51,7 @@ export interface PredictionResult {
   tf_label: string;
   model: string;
   unit: string;
+   confidence:   number;
   metrics: {
     r2: number;
     mae: number;
